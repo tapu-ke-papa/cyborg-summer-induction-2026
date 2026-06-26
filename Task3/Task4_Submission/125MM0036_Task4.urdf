@@ -1,0 +1,228 @@
+<?xml version="1.0"?>
+
+<robot name="line_follower_bot">
+<!--
+ ===================== BASE LINK (CHASSIS) ===================== 
+-->
+<link name="base_link">
+<inertial>
+<origin xyz="0 0 0" rpy="0 0 0"/>
+<mass value="1.5"/>
+<!--
+ Box inertia: I = m/12 * (h^2 + d^2), chassis: 0.2x0.15x0.05 
+-->
+<inertia ixx="0.004219" ixy="0.0" ixz="0.0" iyy="0.005854" iyz="0.0" izz="0.009271"/>
+</inertial>
+<visual>
+<origin xyz="0 0 0" rpy="0 0 0"/>
+<geometry>
+<box size="0.20 0.15 0.05"/>
+</geometry>
+<material name="blue">
+<color rgba="0.0 0.0 0.8 1.0"/>
+</material>
+</visual>
+<collision>
+<origin xyz="0 0 0" rpy="0 0 0"/>
+<geometry>
+<box size="0.20 0.15 0.05"/>
+</geometry>
+</collision>
+</link>
+<!--
+ ===================== LEFT WHEEL ===================== 
+-->
+<link name="left_wheel">
+<inertial>
+<origin xyz="0 0 0" rpy="0 0 0"/>
+<mass value="0.2"/>
+<!--
+ Cylinder inertia: Ixx=Iyy = m/12*(3r^2+h^2), Izz = m/2*r^2
+           r=0.033, h=0.026 (wheel width) 
+-->
+<inertia ixx="0.000073" ixy="0.0" ixz="0.0" iyy="0.000073" iyz="0.0" izz="0.000109"/>
+</inertial>
+<visual>
+<origin xyz="0 0 0" rpy="1.5708 0 0"/>
+<geometry>
+<cylinder radius="0.033" length="0.026"/>
+</geometry>
+<material name="black">
+<color rgba="0.1 0.1 0.1 1.0"/>
+</material>
+</visual>
+<collision>
+<origin xyz="0 0 0" rpy="1.5708 0 0"/>
+<geometry>
+<cylinder radius="0.033" length="0.026"/>
+</geometry>
+</collision>
+</link>
+<!--
+ Left wheel joint: continuous (free rotation for driving) 
+-->
+<joint name="left_wheel_joint" type="continuous">
+<parent link="base_link"/>
+<child link="left_wheel"/>
+<!--
+ Offset: +y = left side, z offset puts wheel at bottom of chassis 
+-->
+<origin xyz="-0.05 0.088 -0.011" rpy="0 0 0"/>
+<axis xyz="0 1 0"/>
+<limit effort="10.0" velocity="5.0"/>
+</joint>
+<!--
+ ===================== RIGHT WHEEL ===================== 
+-->
+<link name="right_wheel">
+<inertial>
+<origin xyz="0 0 0" rpy="0 0 0"/>
+<mass value="0.2"/>
+<inertia ixx="0.000073" ixy="0.0" ixz="0.0" iyy="0.000073" iyz="0.0" izz="0.000109"/>
+</inertial>
+<visual>
+<origin xyz="0 0 0" rpy="1.5708 0 0"/>
+<geometry>
+<cylinder radius="0.033" length="0.026"/>
+</geometry>
+<material name="black">
+<color rgba="0.1 0.1 0.1 1.0"/>
+</material>
+</visual>
+<collision>
+<origin xyz="0 0 0" rpy="1.5708 0 0"/>
+<geometry>
+<cylinder radius="0.033" length="0.026"/>
+</geometry>
+</collision>
+</link>
+<!-- Right wheel joint: continuous -->
+<joint name="right_wheel_joint" type="continuous">
+<parent link="base_link"/>
+<child link="right_wheel"/>
+<!-- Offset: -y = right side -->
+<origin xyz="-0.05 -0.088 -0.011" rpy="0 0 0"/>
+<axis xyz="0 1 0"/>
+<limit effort="10.0" velocity="5.0"/>
+</joint>
+<!--
+ ===================== FRONT CASTER WHEEL ===================== 
+-->
+<!--
+ Caster ball for balance at front; fixed joint, ball rolls freely 
+-->
+<link name="caster_wheel">
+<inertial>
+<origin xyz="0 0 0" rpy="0 0 0"/>
+<mass value="0.05"/>
+<!-- Sphere inertia: I = 2/5 * m * r^2, r=0.015 -->
+<inertia ixx="0.0000045" ixy="0.0" ixz="0.0" iyy="0.0000045" iyz="0.0" izz="0.0000045"/>
+</inertial>
+<visual>
+<origin xyz="0 0 0" rpy="0 0 0"/>
+<geometry>
+<sphere radius="0.015"/>
+</geometry>
+<material name="gray">
+<color rgba="0.5 0.5 0.5 1.0"/>
+</material>
+</visual>
+<collision>
+<origin xyz="0 0 0" rpy="0 0 0"/>
+<geometry>
+<sphere radius="0.015"/>
+</geometry>
+</collision>
+</link>
+<!--
+ Caster joint: fixed to chassis (ball slides freely, so fixed is fine) 
+-->
+<joint name="caster_joint" type="fixed">
+<parent link="base_link"/>
+<child link="caster_wheel"/>
+<!--
+ Front of chassis, lowered so all three contact points are level 
+-->
+<origin xyz="0.08 0.0 -0.025" rpy="0 0 0"/>
+</joint>
+<!--
+ ===================== GAZEBO DIFFERENTIAL DRIVE PLUGIN ===================== 
+-->
+<!--
+ Required for Task 4-b: allows the robot to move via cmd_vel in Ignition Gazebo 
+-->
+<gazebo>
+<plugin filename="libignition-gazebo-diff-drive-system.so" name="ignition::gazebo::systems::DiffDrive">
+<!-- Match exact joint names defined above -->
+<left_joint>left_wheel_joint</left_joint>
+<right_joint>right_wheel_joint</right_joint>
+<!--
+ Distance between left and right wheel centers: 0.088 * 2 = 0.176 m 
+-->
+<wheel_separation>0.176</wheel_separation>
+<!--
+ Wheel radius matching the cylinder geometry above 
+-->
+<wheel_radius>0.033</wheel_radius>
+<!-- Publish odometry at 50 Hz -->
+<odom_publish_frequency>50</odom_publish_frequency>
+<!--
+ Topic that receives geometry_msgs/Twist velocity commands 
+-->
+<topic>cmd_vel</topic>
+<!-- Odometry topic -->
+<odom_topic>odom</odom_topic>
+<!-- Frame IDs for TF -->
+<frame_id>odom</frame_id>
+<child_frame_id>base_link</child_frame_id>
+</plugin>
+</gazebo>
+<!--
+ Gazebo material for chassis (optional, for colour in Gazebo) 
+-->
+<gazebo reference="base_link">
+<material>Gazebo/Blue</material>
+</gazebo>
+<gazebo reference="left_wheel">
+<material>Gazebo/Black</material>
+<mu1>1.0</mu1>
+<mu2>1.0</mu2>
+</gazebo>
+<gazebo reference="right_wheel">
+<material>Gazebo/Black</material>
+<mu1>1.0</mu1>
+<mu2>1.0</mu2>
+</gazebo>
+<gazebo reference="caster_wheel">
+<material>Gazebo/Grey</material>
+<!-- Near-zero friction so caster slides freely -->
+<mu1>0.001</mu1>
+<mu2>0.001</mu2>
+</gazebo>
+</robot>
+<!--
+=== LOGIC DESCRIPTION ===
+
+So basically the robot I made is a simple two-wheeled bot with a small ball at the front
+to keep it balanced, just like the line follower I made during induction.
+
+For the main body (base_link) I just used a flat box shape since the chassis of a line
+follower is basically a rectangular PCB with some stuff mounted on it. I gave it 1.5 kg
+which felt realistic for a bot with motors and a battery on it.
+
+For the wheels I used cylinder shapes. I placed them on both sides of the chassis and
+connected them using continuous joints because wheels need to spin forever without any
+angle limit. The joint axis is along Y so when the joint rotates, the wheel actually rolls
+forward or backward. I kept the radius at 3.3 cm because that's close to what normal
+BO motor wheels look like.
+
+For balance I added a small sphere at the front as a caster. I connected it with a fixed
+joint because the ball itself is round so it naturally slides in any direction. I also set
+its friction to nearly zero in Gazebo so it doesn't fight against the turning of the bot.
+
+For the DiffDrive plugin I just put in the same joint names I defined above and calculated
+the wheel separation by multiplying the side offset by 2 (0.088 * 2 = 0.176 m). This
+plugin listens to cmd_vel and turns that into actual wheel spinning in the simulation.
+
+For inertia I used the standard box, cylinder and sphere formulas to assign approximate physical properties to each link. Using realistic non-zero inertia values improves the stability of the robot during simulation and prevents unstable behaviour in Gazebo.
+-->
